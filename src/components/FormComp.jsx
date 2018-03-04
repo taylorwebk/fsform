@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Container, Form, Radio, Header, Grid, Card, Image, Icon, Button, Modal } from 'semantic-ui-react'
+import { Container, Form, Dimmer, Loader, Radio, Header, Grid, Card, Image, Icon, Button, Modal } from 'semantic-ui-react'
 import axios from 'axios'
 import html5 from '../assets/1.png'
 import andrd from '../assets/2.png'
@@ -16,7 +16,8 @@ export default class FormComp extends Component {
       gender: 'M',
       selectedModules: [],
       message: '',
-      openModal: false
+      openModal: false,
+      loading: false
     }
     this.changeGender = this.changeGender.bind(this)
     this.addModule = this.addModule.bind(this)
@@ -24,7 +25,7 @@ export default class FormComp extends Component {
     this.closeModal = this.closeModal.bind(this)
   }
   componentDidMount() {
-    axios.get('http://localhost/elis-api/module')
+    axios.get('http://grindhood.com/elis-api/module')
       .then((res) => {
         this.setState({
           modules: res.data.content
@@ -72,17 +73,21 @@ export default class FormComp extends Component {
       univ: universidad,
       modulos: modules
     }
-    axios.post('http://localhost/elis-api/student', data)
+    this.setState({
+      loading: true
+    })
+    axios.post('http://grindhood.com/elis-api/student', data)
       .then((res) => {
         this.setState({
           message: res.data.usrmsg,
-          openModal: true
+          openModal: true,
+          loading: false
         })
       })
   }
   render() {
     const {
-      gender, modules, selectedModules, message, openModal
+      gender, modules, selectedModules, message, openModal, loading
     } = this.state
     const ml = modules.length
     let modulesCont = null
@@ -149,6 +154,13 @@ export default class FormComp extends Component {
     }
     return (
       <Container>
+        {
+          loading ?
+            <Dimmer active>
+              <Loader inverted content="Registrando" />
+            </Dimmer> :
+            null
+        }
         {modal}
         <Form size="big">
           <Form.Group widths="equal">
