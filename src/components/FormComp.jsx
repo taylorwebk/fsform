@@ -7,22 +7,25 @@ import larav from '../assets/3.png'
 import react from '../assets/4.png'
 
 const images = ['', html5, andrd, larav, react]
-
+const defaultState = {
+  modules: [],
+  gender: 'M',
+  selectedModules: [],
+  message: '',
+  openModal: false,
+  loading: false,
+  error: '',
+  modalErrorOpen: false
+}
 export default class FormComp extends Component {
   constructor() {
     super()
-    this.state = {
-      modules: [],
-      gender: 'M',
-      selectedModules: [],
-      message: '',
-      openModal: false,
-      loading: false
-    }
+    this.state = defaultState
     this.changeGender = this.changeGender.bind(this)
     this.addModule = this.addModule.bind(this)
     this.sendData = this.sendData.bind(this)
     this.closeModal = this.closeModal.bind(this)
+    this.closeErrorModal = this.closeErrorModal.bind(this)
   }
   componentDidMount() {
     axios.get('http://grindhood.com/elis-api/module')
@@ -35,6 +38,11 @@ export default class FormComp extends Component {
   closeModal() {
     this.setState({
       openModal: false
+    })
+  }
+  closeErrorModal() {
+    this.setState({
+      modalErrorOpen: false
     })
   }
   changeGender(e, { value }) {
@@ -63,35 +71,79 @@ export default class FormComp extends Component {
     const universidad = document.getElementById('universidad').value
     const genero = this.state.gender
     const modules = this.state.selectedModules
-    const data = {
-      nombres,
-      apellidos,
-      cel: celular,
-      correo,
-      edad,
-      sexo: genero,
-      univ: universidad,
-      modulos: modules
-    }
-    this.setState({
-      loading: true
-    })
-    axios.post('http://grindhood.com/elis-api/student', data)
-      .then((res) => {
-        this.setState({
-          message: res.data.usrmsg,
-          openModal: true,
-          loading: false
-        })
+    if (
+      nombres.length === 0 ||
+      apellidos.length === 0 ||
+      correo.length === 0 ||
+      celular.length === 0 ||
+      universidad.length === 0 ||
+      modules.length === 0
+    ) {
+      this.setState({
+        error: 'Debes llenar todos los campos y elegir al menos un módulo.',
+        modalErrorOpen: true,
+        loading: false
       })
+    } else {
+      const data = {
+        nombres,
+        apellidos,
+        cel: celular,
+        correo,
+        edad,
+        sexo: genero,
+        univ: universidad,
+        modulos: modules
+      }
+      this.setState({
+        loading: true
+      })
+      axios.post('http://grindhood.com/elis-api/student', data)
+        .then((res) => {
+          if (res.data.code === 200) {
+            this.setState({
+              modules: [],
+              gender: 'M',
+              selectedModules: [],
+              error: '',
+              modalErrorOpen: false,
+              message: res.data.usrmsg,
+              openModal: true,
+              loading: false
+            })
+          } else {
+            this.setState({
+              error: res.data.usrmsg,
+              modalErrorOpen: true,
+              loading: false
+            })
+          }
+        })
+    }
   }
   render() {
     const {
-      gender, modules, selectedModules, message, openModal, loading
+      gender, modules, selectedModules, message, openModal, loading, error, modalErrorOpen
     } = this.state
     const ml = modules.length
     let modulesCont = null
     let modal = null
+    let modalError = null
+    if (error.length > 0) {
+      modalError = (
+        <Modal open={modalErrorOpen} basic size="small" onClose={this.closeErrorModal}>
+          <Header icon="exclamation triangle" content="Atención" />
+          <Modal.Content>
+            <p>{error}</p>
+          </Modal.Content>
+          <Modal.Actions>
+            <Button color="red" onClick={this.closeErrorModal} inverted>
+              <Icon name="checkmark" /> Ok
+            </Button>
+          </Modal.Actions>
+        </Modal>
+      )
+    }
     if (message.length > 0) {
       modal = (
         <Modal open={openModal} basic size="small" onClose={this.closeModal}>
@@ -101,7 +153,7 @@ export default class FormComp extends Component {
           </Modal.Content>
           <Modal.Actions>
             <Button color="green" onClick={this.closeModal} inverted>
-              <Icon name="checkmark" /> Got it
+              <Icon name="checkmark" /> Ok
             </Button>
           </Modal.Actions>
         </Modal>
@@ -114,12 +166,14 @@ export default class FormComp extends Component {
             {
               modules.map((module) => {
                 let styles = {
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  boxShadow: '3px 4px 14px 1px rgb(4,4,4)'
                 }
                 if (selectedModules.indexOf(module.id) !== -1) {
                   styles = {
                     ...styles,
-                    background: '#bcbcbc'
+                    transform: 'scale(0.8)',
+                    background: '#9eae9e'
                   }
                 }
                 return (
@@ -162,6 +216,7 @@ export default class FormComp extends Component {
             null
         }
         {modal}
+        {modalError}
         <Form size="big">
           <Form.Group widths="equal">
             <Form.Input id="nombres" required label="Nombres" placeholder="Nombres..." />

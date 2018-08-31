@@ -9,7 +9,7 @@ const HeaderComp = () => (
     <Header as="h1" color="blue">
       Registro de Estudiantes
       <Header.Subheader>
-        Registrate para ser tomar los cursos y ser parte de nuestra gran comunidad.
+        Registrate para tomar los cursos y formar parte de nuestra gran comunidad.
       </Header.Subheader>
     </Header>
     <br />
